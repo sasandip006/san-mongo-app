@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.2.3</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>san.farm.live</groupId>
+	<artifactId>san-mongo-app</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<name>san-mongo-app</name>
+	<description>Live Farming Application project for Spring Boot</description>
+	<properties>
+		<java.version>17</java.version>
+	</properties>
+	<dependencies>
+		<!--dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+		</dependency-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.44.0</version>
+                <configuration>
+                    <dockerHost>tcp://localhost:2375</dockerHost>
+                    <autoCreateCustomNetworks>test-netwrk</autoCreateCustomNetworks>             
+                    <useColor>true</useColor>
+                    <images>
+                        <image>
+                            <name>${project.name}</name>
+                            <build>
+                                <from>openjdk:17</from>
+                                <assembly>
+                                    <name>buildJob</name>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>
+                                <cmd>java -jar buildJob/${project.name}-${project.version}.jar</cmd>
+                                <maintainer>sandh@gmail.com</maintainer>
+                            </build>
+                            <run>
+                                <ports>
+                                    <port>8086:8080</port>
+                                </ports>
+                                <network>
+                                    <name>prvt-netwrk</name>
+                                </network>
+                                <!--dependsOn>xxx</dependsOn-->
+                               <volumes>
+                                   <bind>
+                                       <volume>/san/logs</volume>
+                                   </bind>
+                               </volumes>
+                               <wait>
+                                   <http>
+                                       <url>http://localhost:8086/hello</url>
+                                       <method>GET</method>
+                                       <status>200..299</status>
+                                       
+                                   </http>
+                                   <log>Hello , This is a logger for maven fabric8 docker plugins ------------------ok ok </log>
+                                   <time>100000</time>
+                                   <kill>20000</kill>
+                                   <shutdown>500</shutdown>                          
+                               </wait>
+                               <links>
+                                   <link>mongodb</link>        
+                               </links>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>MyExecution</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>stop</goal>
+                            <goal>remove</goal>
+                            <goal>build</goal>
+                            <!---goal>run</goal-->
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    
+                    <execution>
+                        <id>app-stop</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+		</plugins>
+	</build>
+
+</project>
